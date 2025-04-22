@@ -1,6 +1,7 @@
 import streamlit as st
 import hashlib
 from cryptography.fernet import Fernet
+import os
 
 # --- Session State Initialization ---
 if 'failed_attempts' not in st.session_state:
@@ -8,8 +9,14 @@ if 'failed_attempts' not in st.session_state:
 if 'authorized' not in st.session_state:
     st.session_state.authorized = False
 
-# Generate a static key for Fernet (in real apps, manage securely)
-KEY = Fernet.generate_key()
+# --- Key Handling (Persistent) ---
+KEY_FILE = "fernet_key.key"
+if not os.path.exists(KEY_FILE):
+    with open(KEY_FILE, "wb") as f:
+        f.write(Fernet.generate_key())
+with open(KEY_FILE, "rb") as f:
+    KEY = f.read()
+
 cipher = Fernet(KEY)
 
 # In-memory data storage
@@ -86,9 +93,10 @@ elif choice == "Login":
     login_pass = st.text_input("Enter Master Password:", type="password")
 
     if st.button("Login"):
-        if login_pass == "admin123":  # Replace with secure method in real use
+        if login_pass == "admin123":
             st.session_state.failed_attempts = 0
             st.session_state.authorized = True
             st.success("\u2705 Reauthorized successfully! You can now retry data decryption.")
         else:
             st.error("\u274C Incorrect master password!")
+
